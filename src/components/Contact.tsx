@@ -1,17 +1,19 @@
 import { useState } from "react";
+import { sendEmail } from "../utils/email";
 
 const Contact = () => {
-  const [name, setName] = useState<string>("");
-  const [email, setEmail] = useState<string>("");
-  const [message, setMessage] = useState<string>("");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
 
-  const [error, setError] = useState<string>("");
-  const [success, setSuccess] = useState<string>("");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validation
+    // Basic validation
     if (!name || !email || !message) {
       setError("All fields are required");
       return;
@@ -24,34 +26,25 @@ const Contact = () => {
 
     setError("");
     setSuccess("");
+    setLoading(true);
 
-    try {
-      const res = await fetch("http://localhost:5000/api/contact", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name, email, message }),
-      });
+    const response = await sendEmail({ name, email, message });
 
-      const data = await res.json();
+    setLoading(false);
 
-      if (!res.ok) {
-        throw new Error(data.message || "Something went wrong");
-      }
-
+    if (response.success) {
       setSuccess("Message sent successfully!");
       setName("");
       setEmail("");
       setMessage("");
-    } catch (err: any) {
-      setError(err.message);
+    } else {
+      setError("Failed to send message. Please try again later.");
     }
   };
 
   return (
     <div className="contact-wrapper">
-      <h2 className="contact-title">Contact us</h2>
+      <h2 className="contact-title">Contact Us</h2>
 
       <div className="contact-box">
         {/* LEFT FORM */}
@@ -79,7 +72,9 @@ const Contact = () => {
           {error && <p className="error">{error}</p>}
           {success && <p className="success">{success}</p>}
 
-          <button type="submit">Contact Us</button>
+          <button type="submit" disabled={loading}>
+            {loading ? "Sending..." : "Contact Us"}
+          </button>
         </form>
 
         {/* RIGHT CONTENT */}
